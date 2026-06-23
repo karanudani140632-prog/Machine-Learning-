@@ -1,47 +1,83 @@
-# naive grid search implementation
 from sklearn.svm import SVC
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
+
 import pandas as pd
-from IPython.display import display
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import mglearn.plots
 
+# Load dataset
 iris = load_iris()
 
-param_grid = {'C': [0.001, 0.01, 0.1, 1, 10, 100],'gamma': [0.001, 0.01, 0.1, 1, 10, 100]}
-print("Parameter grid:\n{}".format(param_grid))
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    iris.data,
+    iris.target,
+    random_state=0
+)
 
+# Parameter grid
+param_grid = {
+    'C': [0.001, 0.01, 0.1, 1, 10, 100],
+    'gamma': [0.001, 0.01, 0.1, 1, 10, 100]
+}
 
-grid_search = GridSearchCV(SVC(), param_grid, cv=5)
-X_train, X_test, y_train, y_test = train_test_split(iris.data, iris.target, random_state=0)
+print("Parameter grid:")
+print(param_grid)
+
+# Grid Search
+grid_search = GridSearchCV(
+    SVC(),
+    param_grid,
+    cv=5
+)
 
 grid_search.fit(X_train, y_train)
 
-print("Test set score: {:.2f}".format(grid_search.score(X_test, y_test)))
+# Results
+print("\nTest set score: {:.2f}".format(
+    grid_search.score(X_test, y_test)
+))
 
-print("Best parameters: {}".format(grid_search.best_params_))
-print("Best cross-validation score: {:.2f}".format(grid_search.best_score_))
+print("Best parameters:", grid_search.best_params_)
+print("Best cross-validation score: {:.2f}".format(
+    grid_search.best_score_
+))
 
-print("Best estimator:\n{}".format(grid_search.best_estimator_))
+print("\nBest estimator:")
+print(grid_search.best_estimator_)
 
-# convert to DataFrame
+# Convert cv results to DataFrame
 results = pd.DataFrame(grid_search.cv_results_)
-# show the first 5 rows
-display(results.head())
 
-scores = np.array(results.mean_test_score).reshape(6, 6)
-# plot the mean cross-validation scores
-mglearn.tools.heatmap(scores, xlabel='gamma', xticklabels=param_grid['gamma'],ylabel='C', yticklabels=param_grid['C'], cmap="viridis")
+print("\nFirst 5 rows of cv_results_:")
+print(results.head())
+
+# Create score matrix for heatmap
+scores = results['mean_test_score'].to_numpy().reshape(
+    len(param_grid['C']),
+    len(param_grid['gamma'])
+)
+
+print("\nScore matrix shape:", scores.shape)
+
+# Plot heatmap
+plt.figure(figsize=(8, 6))
+
+sns.heatmap(
+    scores,
+    annot=True,
+    fmt=".3f",
+    cmap="viridis",
+    xticklabels=param_grid['gamma'],
+    yticklabels=param_grid['C']
+)
+
+plt.xlabel("gamma")
+plt.ylabel("C")
+plt.title("GridSearchCV Mean Cross-Validation Scores")
+
+plt.tight_layout()
 plt.show()
-
-# Another way to show heatmap with seaborn
-#hm = sns.heatmap(data=scores,annot=True)
-#plt.title("Heatmap")
-#plt.xlabel("C")
-#plt.ylabel("gamma")
-#plt.show()
-
